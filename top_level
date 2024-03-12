@@ -1,0 +1,117 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity top_level is
+    Port (
+        CLK100MHZ : in STD_LOGIC;             -- 100 MHz clock input
+        SW        : in STD_LOGIC_VECTOR(3 downto 0); -- Switches for initial seed value
+        BTND      : in STD_LOGIC;             -- Button for enabling seed value loading
+        BTNC      : in STD_LOGIC;             -- Button for other purpose
+        AN        : out STD_LOGIC_VECTOR(7 downto 0); -- 7-segment display anodes
+        CA        : out STD_LOGIC;            -- 7-segment display segment A
+        CB        : out STD_LOGIC;            -- 7-segment display segment B
+        CC        : out STD_LOGIC;            -- 7-segment display segment C
+        CD        : out STD_LOGIC;            -- 7-segment display segment D
+        CE        : out STD_LOGIC;            -- 7-segment display segment E
+        CF        : out STD_LOGIC;            -- 7-segment display segment F
+        CG        : out STD_LOGIC;            -- 7-segment display segment G
+        DP        : out STD_LOGIC;            -- 7-segment display decimal point
+        LED       : out STD_LOGIC_VECTOR(3 downto 0); -- LED output (3:0)
+        LED16_B   : out STD_LOGIC              -- LED output (16_B)
+    );
+end top_level;
+
+architecture behavioral of top_level is
+    -- Component declaration for clock enable
+    component clock_enable
+        generic (
+            PERIOD : integer := 50000000  -- Default period of 50000000 (500 ms)
+        );
+        Port (
+            clk   : in  std_logic;  -- Clock input
+            rst   : in  std_logic;  -- Reset input
+            pulse : out std_logic   -- Clock enable pulse output
+        );
+    end component;
+
+    -- Component declaration for LFSR counter
+    component lfsr
+        Port (
+            clk         : in STD_LOGIC;       -- Main clock
+            en          : in STD_LOGIC;       -- Clock enable input
+            load_enable : in STD_LOGIC;       -- Enable signal to load default/seed data
+            load_data   : in STD_LOGIC_VECTOR(3 downto 0); -- Default/seed data
+            count       : out STD_LOGIC_VECTOR(3 downto 0); -- Register value
+            done        : out STD_LOGIC       -- Done signal
+        );
+    end component;
+
+    -- Component declaration for bin2seg
+    component bin2seg
+        Port (
+            clear      : in std_logic;                 -- Clear signal for clearing display
+            bin_in     : in std_logic_vector(3 downto 0); -- 4-bit binary input
+            seg_out    : out std_logic_vector(6 downto 0) -- 7-segment display output
+        );
+    end component;
+
+    -- Local signals for a counter: 4-bit @ 500 ms
+    signal sig_en_500ms : STD_LOGIC;            -- Renamed clock enable output signal
+    signal lfsr_done : STD_LOGIC;
+    signal lfsr_count : STD_LOGIC_VECTOR(3 downto 0);
+    signal seg_out : STD_LOGIC_VECTOR(6 downto 0);  -- Output of bin2seg component
+
+begin
+
+    -- Component instantiation of clock enable for 500 ms
+    clk_enable_inst : clock_enable
+    generic map (
+        PERIOD => 50000000  -- Set period to 500 ms
+    )
+    port map (
+        clk => CLK100MHZ,
+        rst => BTNC,
+        pulse => sig_en_500ms
+    );
+
+    -- Component instantiation of 4-bit LFSR counter
+    lfsr_inst : lfsr
+    port map (
+        clk => CLK100MHZ,
+        en => sig_en_500ms,  
+        load_enable => BTND,
+        load_data => SW,
+        count => lfsr_count,
+        done => lfsr_done
+    );
+
+    -- Component instantiation of bin2seg
+    bin2seg_inst : bin2seg
+    port map (
+        clear => BTNC,
+        bin_in => lfsr_count,
+        seg_out => seg_out
+    );
+
+    -- Connect the segments output to the 7-segment display ports
+    CA <= seg_out(6);
+    CB <= seg_out(5);
+    CC <= seg_out(4);
+    CD <= seg_out(3);
+    CE <= seg_out(2);
+    CF <= seg_out(1);
+    CG <= seg_out(0);
+
+    -- Turn off the decimal point
+    DP <= '1';  -- Assuming active-low for the decimal point
+
+    -- Set display position to turn on all segments except the last one
+    AN <= "11111110";  -- Assuming "1111_1110" represents common anodes (active-low)
+
+    -- Connect LED(3:0) with output lfsr_count
+    LED <= lfsr_count;
+
+    -- Connect LED16_B with lfsr_done
+    LED16_B <= lfsr_done;
+
+end behavioral;
