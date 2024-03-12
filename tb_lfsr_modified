@@ -1,0 +1,78 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity tb_lfsr is
+end tb_lfsr;
+
+architecture behavior of tb_lfsr is
+    -- Constants for simulation parameters
+    constant CLOCK_PERIOD: time := 10 ns;  -- Clock period (adjust as needed)
+    constant C_NBIT : integer := 4; -- Simulating number of bits
+    
+    -- Components declaration
+    component lfsr
+        generic (
+            NBIT : integer := C_NBIT
+        );
+        port (
+            clk         : in  STD_LOGIC;              -- Main clock
+            en          : in  STD_LOGIC;              -- Clock enable input
+            load_enable : in  STD_LOGIC;              -- Enable signal to load default/seed data
+            load_data   : in  STD_LOGIC_VECTOR(C_NBIT - 1 downto 0); -- Default/seed data
+            count       : out STD_LOGIC_VECTOR(C_NBIT - 1 downto 0); -- Register value
+            done        : out STD_LOGIC               -- Done signal
+        );
+    end component;
+
+    -- Signals declaration
+    signal clk        : STD_LOGIC := '0';            -- Main clock signal
+    signal en         : STD_LOGIC := '1';            -- Clock enable signal
+    signal load_enable: STD_LOGIC := '0';            -- Enable signal to load default/seed data
+    signal load_data  : STD_LOGIC_VECTOR(C_NBIT - 1 downto 0); -- Default/seed data
+    signal count      : STD_LOGIC_VECTOR(C_NBIT - 1 downto 0); -- Register value
+    signal done       : STD_LOGIC;                   -- Done signal
+
+begin
+
+    -- Instantiate the DUT (Design Under Test)
+    dut_lfsr: lfsr
+        generic map (
+            NBIT => C_NBIT
+        )
+        port map (
+            clk          => clk,
+            en           => en,
+            load_enable  => load_enable,
+            load_data    => load_data,
+            count        => count,
+            done         => done
+        );
+
+    -- Clock generation process
+    clk_process: process
+    begin
+        while now < 1000 ns loop  -- Adjust simulation time as needed
+            clk <= '0';
+            wait for CLOCK_PERIOD / 2;
+            clk <= '1';
+            wait for CLOCK_PERIOD / 2;
+        end loop;
+        wait;
+    end process;
+
+    -- Stimulus process
+    stimulus_process: process
+    begin
+        
+        -- Example 1: Load seed value "0000", generate 16 clock cycles
+        load_enable <= '1';
+        load_data <= (others => '0');
+        wait for CLOCK_PERIOD;
+        load_enable <= '0';
+        wait for 16 * CLOCK_PERIOD;
+       
+        
+        wait;
+    end process;
+
+end behavior;
