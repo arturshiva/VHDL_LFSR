@@ -21,7 +21,7 @@ entity top_level is
         LED17_B   : out STD_LOGIC                  -- LED output (17_B)
     );
 end top_level;
-
+architecture behavioral of top_level is
 component clock_enable
     generic (
         PERIOD : integer := 50000000  -- Default period of 50000000 (500 ms)
