@@ -21,7 +21,7 @@ entity top_level is
         LED17_B   : out STD_LOGIC                  -- LED output (17_B)
     );
 end top_level;
-architecture behavioral of top_level is
+
 component clock_enable
     generic (
         PERIOD : integer := 50000000  -- Default period of 50000000 (500 ms)
@@ -35,14 +35,14 @@ end component;
 
 component lfsr
     generic (
-        N : integer := 4
+        NBIT : integer := 4  -- Generic parameter for specifying the number of bits in the LFSR counter
     );
     Port (
         clk         : in STD_LOGIC;               -- Main clock
         en          : in STD_LOGIC;               -- Clock enable input
         load_enable : in STD_LOGIC;               -- Enable signal to load default/seed data
-        load_data   : in STD_LOGIC_VECTOR(N-1 downto 0); -- Default/seed data
-        count       : out STD_LOGIC_VECTOR(N-1 downto 0); -- Register value
+        load_data   : in STD_LOGIC_VECTOR(NBIT-1 downto 0); -- Default/seed data
+        count       : out STD_LOGIC_VECTOR(NBIT-1 downto 0); -- Register value
         done        : out STD_LOGIC                -- Done signal
     );
 end component;
@@ -90,7 +90,7 @@ begin
     -- Component instantiation of 4-bit LFSR counter
     lfsr_inst_4bit : lfsr
     generic map (
-        N => 4
+        NBIT => 4  -- Number of bits in the LFSR counter
     )
     port map (
         clk => CLK100MHZ,
@@ -104,7 +104,7 @@ begin
     -- Component instantiation of 8-bit LFSR counter
     lfsr_inst_8bit : lfsr
     generic map (
-        N => 8
+        NBIT => 8  -- Number of bits in the LFSR counter
     )
     port map (
         clk => CLK100MHZ,
@@ -147,4 +147,4 @@ begin
     -- Connect LED17_B with lfsr_8bit_done
     LED17_B <= lfsr_8bit_done;
 
-end behavioral;
+end top_level;
